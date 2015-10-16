@@ -40,8 +40,8 @@ object Lexer {
   val RETURN = P( "return" ).!.map(Return_keyword).log()
 
   val INT = P( "int".! ~ &(wsComment)).map(Integer_declaration).log()
-  val STRING = P( "string" ).!.map(String_declaration).log()
-  val EXTERN = P( "extern" ).!.map(External_declaration).log()
+  val STRING = P( "string".! ~ &(wsComment) ).map(String_declaration).log()
+  val EXTERN = P( "extern".! ~ &(wsComment) ).map(External_declaration).log()
 
   val CONST_INT = P ( "-".? ~ CharIn('0' to '9').rep(1) ).!.map((s:String) => Integer_constant(s.toInt)).log()
   val CONST_STRING = P( "\"" ~ CharsWhile(_ != '"').! ~ "\"").map(String_constant).log()

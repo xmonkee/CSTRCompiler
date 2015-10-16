@@ -1,12 +1,4 @@
 
-#ifdef GCC /* GCC code */
-
-#define STRING_SIZE 128
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 typedef char* string;
 
 string cat( string s, string t ) {
@@ -23,14 +15,8 @@ string int2string( int a ) {
   return strdup(s);
 }
 
-#else /* compiler code */
-
-#define cat(x,y) x+y
-#define int2string(x) x
-
 extern int printf( string s );
 
-#endif
 
 string u;
 

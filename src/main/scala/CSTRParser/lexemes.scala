@@ -10,54 +10,54 @@ object Lexemes {
 
   case class Ident(s: String) extends Lexeme
 
-  case class External_declaration(s: String) extends Lexeme
-  case class Integer_declaration(s: String) extends Lexeme
-  case class String_declaration(s: String) extends Lexeme
+  case object ExternalDeclaration extends Lexeme
+  case object IntegerDeclaration extends Lexeme
+  case object StringDeclaration extends Lexeme
 
-  case class Integer_constant(i: Int) extends Lexeme
-  case class String_constant(s: String) extends Lexeme
+  trait Type extends Lexeme
+  case class IntegerConstant(s: String) extends Type
+  case class StringConstant(s: String) extends Type
 
-  trait Additive_operator
-  case class Plus_op(s: String) extends Lexeme with Additive_operator
-  case class Minus_op(s: String) extends Lexeme with Additive_operator
+  trait AdditiveOperator extends Lexeme
+  case object PlusOp extends AdditiveOperator
+  case object MinusOp extends AdditiveOperator
 
-  trait Shift_operator
-  case class Left_shift(s: String) extends Lexeme with Shift_operator
-  case class Right_shift(s: String) extends Lexeme with Shift_operator
+  trait ShiftOperator extends Lexeme
+  case object LeftShift extends ShiftOperator
+  case object RightShift extends ShiftOperator
 
-  case class Assignment(s: String) extends Lexeme
+  case object Assignment extends Lexeme
 
-  trait Comparison_operator
-  case class Equal_op(s: String) extends Lexeme with Comparison_operator
-  case class NE_op(s: String) extends Lexeme with Comparison_operator
-  case class LT_op(s: String) extends Lexeme with Comparison_operator
-  case class GT_op(s: String) extends Lexeme with Comparison_operator
-  case class LE_op(s: String) extends Lexeme with Comparison_operator
-  case class GE_op(s: String) extends Lexeme with Comparison_operator
+  trait ComparisonOperator extends Lexeme
+  case object EqualOp extends ComparisonOperator
+  case object NEOp extends ComparisonOperator
+  case object LTOp extends ComparisonOperator
+  case object GTOp extends ComparisonOperator
+  case object LEOp extends ComparisonOperator
+  case object GEOp extends ComparisonOperator
 
-  trait Multiplicative_operator
-  case class Mult_op(s: String) extends Lexeme with Multiplicative_operator
-  case class Div_op(s: String) extends Lexeme with Multiplicative_operator
-  case class Mod_op(s: String) extends Lexeme with Multiplicative_operator {
-    // Have to override this one because printing % sign without escaping throws error
-    override def toString = "Mod_op(%%)"
+  trait MultiplicativeOperator extends Lexeme
+  case object MultOp extends MultiplicativeOperator
+  case object DivOp extends MultiplicativeOperator
+  case object ModOp extends MultiplicativeOperator {
+    override def toString = "ModOp(%%)"
   }
 
-  trait Keyword
-  case class If_keyword(s: String) extends Lexeme with Keyword
-  case class Else_keyword(s: String) extends Lexeme with Keyword
-  case class While_keyword(s: String) extends Lexeme with Keyword
-  case class Do_keyword(s: String) extends Lexeme with Keyword
-  case class For_keyword(s: String) extends Lexeme with Keyword
-  case class Return_keyword(s: String) extends Lexeme with Keyword
+  trait Keyword extends Lexeme
+  case object IfKeyword extends Keyword
+  case object ElseKeyword extends Keyword
+  case object WhileKeyword extends Keyword
+  case object DoKeyword extends Keyword
+  case object ForKeyword extends Keyword
+  case object ReturnKeyword extends Keyword
 
-  case class Left_parenthesis(s: String) extends Lexeme
-  case class Right_parenthesis(s: String) extends Lexeme
-  case class Left_braces(s: String) extends Lexeme
-  case class Right_braces(s: String) extends Lexeme
-  case class Left_brackets(s: String) extends Lexeme
-  case class Right_brackets(s: String) extends Lexeme
-  case class Comma(s: String) extends Lexeme
-  case class SemiColon(s: String) extends Lexeme
+  case object LeftParenthesis extends Lexeme
+  case object RightParenthesis extends Lexeme
+  case object LeftBraces extends Lexeme
+  case object RightBraces extends Lexeme
+  case object LeftBrackets extends Lexeme
+  case object RightBrackets extends Lexeme
+  case object Comma extends Lexeme
+  case object SemiColon extends Lexeme
 
 }

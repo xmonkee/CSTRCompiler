@@ -4,19 +4,21 @@ package CSTRParser
  * Created by mayankmandava on 10/14/15.
  */
 
+import AST.Expression
+
 object Lexemes {
 
   trait Lexeme
 
-  case class Ident(s: String) extends Lexeme
-
-  case object ExternalDeclaration extends Lexeme
-  case object IntegerDeclaration extends Lexeme
-  case object StringDeclaration extends Lexeme
+  case class Ident(s: String) extends Lexeme with Expression
 
   trait Type extends Lexeme
-  case class IntegerConstant(s: String) extends Type
-  case class StringConstant(s: String) extends Type
+  case object ExternalDeclaration extends Type
+  case object IntegerDeclaration extends Type
+  case object StringDeclaration extends Type
+
+  case class IntegerConstant(s: String) extends Expression
+  case class StringConstant(s: String) extends Expression
 
   trait AdditiveOperator extends Lexeme
   case object PlusOp extends AdditiveOperator

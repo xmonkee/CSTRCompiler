@@ -3,64 +3,66 @@ package CSTRParser
  * Created by mayankmandava on 10/14/15.
  */
 
-import CSTRParser.Lexemes._
+
+import Lexemes._
 import util.parsing.combinator.JavaTokenParsers
 
 
 class Lexer extends JavaTokenParsers{
 
-  val IF           = "if"                ^^^ IfKeyword
-  val ELSE         = "else"              ^^^ ElseKeyword
-  val WHILE        = "while"             ^^^ WhileKeyword
-  val DO           = "do"                ^^^ DoKeyword
-  val FOR          = "for"               ^^^ ForKeyword
-  val RETURN       = "return"            ^^^ ReturnKeyword
+  val `if`         = "if"                ^^^ IfKeyword
+  val `else`       = "else"              ^^^ ElseKeyword
+  val `while`      = "while"             ^^^ WhileKeyword
+  val `do`         = "do"                ^^^ DoKeyword
+  val `for`        = "for"               ^^^ ForKeyword
+  val `return`     = "return"            ^^^ ReturnKeyword
 
-  val INT          = "int"               ^^^ IntegerDeclaration
-  val STRING       = "string"            ^^^ StringDeclaration
-  val EXTERN       = "extern"            ^^^ ExternalDeclaration
+  val int          = "int"               ^^^ IntegerDeclaration
+  val string       = "string"            ^^^ StringDeclaration
+  val extern       = "extern"            ^^^ ExternalDeclaration
 
-  val CONST_INT    = super.wholeNumber   ^^ IntegerConstant
-  val CONST_STRING = super.stringLiteral ^^ StringConstant
+  val constInt    = super.wholeNumber    ^^  IntegerConstant
+  val constString = super.stringLiteral  ^^  StringConstant
 
-  val PLUS         = "+"                 ^^^ PlusOp
-  val MINUS        = "-"                 ^^^ MinusOp
+  val plus         = "+"                 ^^^ PlusOp
+  val minus        = "-"                 ^^^ MinusOp
 
-  val ASSIGN       = "= "                ^^^ Assignment
+  val assign       = "= "                ^^^ Assign
 
-  val LEFTSHIFT    = "<<"                ^^^ LeftShift
-  val RIGHTSHIFT   = ">>"                ^^^ RightShift
+  val leftshift    = "<<"                ^^^ LeftShift
+  val rightshift   = ">>"                ^^^ RightShift
 
-  val EQUAL        = "== "               ^^^ EqualOp
-  val NE           = "!= "               ^^^ NEOp
-  val LT           = "<"                 ^^^ LTOp
-  val GT           = ">"                 ^^^ GTOp
-  val LE           = "<= "               ^^^ LEOp
-  val GE           = ">= "               ^^^ GEOp
+  val equal        = "== "               ^^^ EqualOp
+  val ne           = "!= "               ^^^ NEOp
+  val lt           = "<"                 ^^^ LTOp
+  val gt           = ">"                 ^^^ GTOp
+  val le           = "<= "               ^^^ LEOp
+  val ge           = ">= "               ^^^ GEOp
 
-  val SEMICOLON    = ";"                 ^^^ SemiColon
-  val COMMA        = ","                 ^^^ Comma
-  val LP           = "("                 ^^^ LeftParenthesis
-  val RP           = ")"                 ^^^ RightParenthesis
-  val LB           = "{"                 ^^^ LeftBraces
-  val RB           = "}"                 ^^^ RightBraces
-  val LBR          = "]"                 ^^^ LeftBrackets
-  val RBR          = "["                 ^^^ RightBrackets
+  val semicolon    = ";"                 ^^^ SemiColon
+  val comma        = ","                 ^^^ Comma
+  val lp           = "("                 ^^^ LeftParenthesis
+  val rp           = ")"                 ^^^ RightParenthesis
+  val lb           = "{"                 ^^^ LeftBraces
+  val rb           = "}"                 ^^^ RightBraces
+  val lbr          = "]"                 ^^^ LeftBrackets
+  val rbr          = "["                 ^^^ RightBrackets
 
-  val MULT         = "*"                 ^^^ MultOp
-  val DIV          = "/"                 ^^^ DivOp
-  val MOD          = "%"                 ^^^ ModOp
+  val mult         = "*"                 ^^^ MultOp
+  val div          = "/"                 ^^^ DivOp
+  val mod          = "%"                 ^^^ ModOp
 
 
-  val IDENT: Parser[Ident]         = super.ident ^^ Ident
-  val KEYWORD: Parser[Keyword]     = IF                    | ELSE         | WHILE  | DO  | FOR | RETURN
-  val TYPE: Parser[Lexeme]         = INT                   | STRING       | EXTERN
-  val CONST: Parser[Lexeme]        = CONST_INT             | CONST_STRING
-  val MATH: Parser[Lexeme]         = PLUS                  | MINUS        | MULT   | DIV | MOD
-  val SHIFT: Parser[Lexeme]        = LEFTSHIFT             | RIGHTSHIFT
-  val COMP : Parser[Lexeme]        = EQUAL                 | NE           | LE     | GE  | LT  | GT
-  val PUNCTUATION: Parser[Lexeme]  = SEMICOLON             | COMMA        | LP     | RP  | LB  | RB     | LBR | RBR
+ val identifier : Parser[Ident] = super.ident ^^ Ident
+ val keyword : Parser[Keyword] = `if` | `else` | `while` | `do` | `for` | `return`
+ val `type` : Parser[Type] = int | string | extern
+ val const : Parser[Lexeme] = constInt | constString
+ val plusminus : Parser[AdditiveOperator] = plus | minus
+ val multdiv : Parser[MultiplicativeOperator] = mult | div | mod
+ val shift : Parser[ShiftOperator] = leftshift | rightshift
+ val comp : Parser[ComparisonOperator] = equal | ne | le | ge | lt | gt
+ val punctuation : Parser[Lexeme] = semicolon | comma | lp | rp | lb | rb | lbr | rbr
 
-  val lexeme: Parser[Lexeme]       = KEYWORD | TYPE | CONST | MATH | SHIFT | COMP | ASSIGN | PUNCTUATION | IDENT
+  val lexeme : Parser[Lexeme] = keyword | `type` | const | plusminus | multdiv | shift | comp | assign | punctuation | identifier
 }
 

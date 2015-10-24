@@ -1,7 +1,5 @@
-extern int hello {} 
-//External shit
+extern int hello();
 extern int foo2(int x);
-// Function
 int foo(int count)
 {
  int sum = 0;

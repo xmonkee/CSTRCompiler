@@ -6,17 +6,19 @@ import scala.util.{Try, Success, Failure}
  */
 object main {
 
+  import sext._
+
   def main(args: Array[String]): Unit = {
     val output = for {
       fileName <- Try(args(0)) recoverWith {
         case e: Exception => Failure(new Exception("No filename given"))}
       fileLines <- Try(io.Source.fromFile(fileName).getLines)
       fileContent <- Try(fileLines.mkString("\n"))
-      lexemes <- Try(CSTRParser.Parser.scan(fileContent))
+      lexemes <- Try(CSTRParser.CSTRParser.parse(fileContent))
     } yield lexemes
 
     output match {
-      case Success(v) => println(v)
+      case Success(v) => println(v.treeString)
       case Failure(e) => printf("Error: " + e.getMessage)
     }
 

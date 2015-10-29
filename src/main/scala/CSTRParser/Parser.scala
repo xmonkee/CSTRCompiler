@@ -12,7 +12,7 @@ object CSTRParser extends Lexer{
 
   def parse(s: String) = parseAll(program, s)
 
-  def program: Parser[Seq[TopLevel]] = rep1(topLevel)
+  def program: Parser[Program] = rep1(topLevel) ^^ Program
 
   def topLevel: Parser[TopLevel] = declaration | externDeclaration | functionDefinition
 
@@ -73,24 +73,27 @@ object CSTRParser extends Lexer{
       case s ~ c => (s, c)
     }
 
-  def shiftive: Parser[Shiftive] = additive ~ makeRepeater(additive, shift).* ^^ {
+  def shiftive: Parser[Expression] = additive ~ makeRepeater(additive, shift).* ^^ {
+    case a ~ Nil => a
     case a ~ l => Shiftive(a, l)
   }
 
-  def additive: Parser[Additive] = multiplicative ~ makeRepeater(multiplicative, plusminus).* ^^ {
+  def additive: Parser[Expression] = multiplicative ~ makeRepeater(multiplicative, plusminus).* ^^ {
+    case a ~ Nil => a
     case a ~ l => Additive(a, l)
   }
 
-  def multiplicative: Parser[Multiplicative] = unaryExpression ~ makeRepeater(unaryExpression, multdiv).* ^^ {
+  def multiplicative: Parser[Expression] = unaryExpression ~ makeRepeater(unaryExpression, multdiv).* ^^ {
+    case a ~ Nil => a
     case a ~ l => Multiplicative(a, l)
   }
 
-  def unaryExpression: Parser[Unary] = postfixExpression | (minus ~> unaryExpression ^^ Minus)
+  def unaryExpression: Parser[Expression] = postfixExpression | (minus ~> unaryExpression ^^ Minus)
 
-  def postfixExpression: Parser[Postfix] = functionApplication | primaryExpression
+  def postfixExpression: Parser[Expression] = functionApplication | primaryExpression
 
-  def functionApplication: Parser[FunctionApplication] = identifier ~ (lp ~> repsep(shiftive, comma) <~ rp) ^^ {
+  def functionApplication: Parser[Expression] = identifier ~ (lp ~> repsep(shiftive, comma) <~ rp) ^^ {
       case i ~ l => FunctionApplication(i, l)}
 
-  def primaryExpression: Parser[PrimayExpression] = identifier | constInt | constString | lp ~> shiftive <~ rp
+  def primaryExpression: Parser[Expression] = identifier | constInt | constString | lp ~> shiftive <~ rp
 }

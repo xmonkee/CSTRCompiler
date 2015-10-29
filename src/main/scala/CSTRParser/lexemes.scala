@@ -1,6 +1,6 @@
 package CSTRParser
 
-import AST.{PrimayExpression, Declarator}
+import AST.{PrimaryExpression, Declarator}
 
 /**
  * Created by mayankmandava on 10/14/15.
@@ -10,9 +10,9 @@ object Lexemes {
 
   trait Lexeme
 
-  case class Ident(s: String) extends Lexeme with PrimayExpression with Declarator
-  case class IntegerConstant(s: String) extends Lexeme with PrimayExpression
-  case class StringConstant(s: String) extends Lexeme with PrimayExpression
+  case class Ident(s: String) extends Lexeme with PrimaryExpression with Declarator
+  case class IntegerConstant(s: String) extends Lexeme with PrimaryExpression
+  case class StringConstant(s: String) extends Lexeme with PrimaryExpression
 
   trait Type extends Lexeme
   case object ExternalDeclaration extends Type

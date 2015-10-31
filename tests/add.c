@@ -1,6 +1,6 @@
 int printd( int i );
 
-int main() {
+int main(int argc, int argv) {
   int i,j;
   i = 45000;
   j = -123;

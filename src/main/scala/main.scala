@@ -1,4 +1,6 @@
 
+import CSTRParser.{AST, TypeChecker}
+
 import scala.util.{Try, Success, Failure}
 
 /**
@@ -6,7 +8,12 @@ import scala.util.{Try, Success, Failure}
  */
 object main {
 
-  import sext._
+
+  implicit def parseResultToTry[A](p: CSTRParser.CSTRParser.ParseResult[A]):Try[A] = p match {
+    case CSTRParser.CSTRParser.Success(v, _) => Success(v)
+    case CSTRParser.CSTRParser.Failure(e, _) => Failure(new Exception(e))
+    case CSTRParser.CSTRParser.Error(m, _) => Failure(new Exception(m))
+  }
 
   def main(args: Array[String]): Unit = {
     val output = for {
@@ -14,11 +21,11 @@ object main {
         case e: Exception => Failure(new Exception("No filename given"))}
       fileLines <- Try(io.Source.fromFile(fileName).getLines)
       fileContent <- Try(fileLines.mkString("\n"))
-      lexemes <- Try(CSTRParser.CSTRParser.parse(fileContent))
-    } yield lexemes
+      ast <- CSTRParser.CSTRParser.parse(fileContent)
+    } yield ast
 
     output match {
-      case Success(v) => println(v.treeString)
+      case Success(v) => println(TypeChecker.State.typeCheck(v)) //; println(v.treeString)
       case Failure(e) => printf("Error: " + e.getMessage)
     }
 

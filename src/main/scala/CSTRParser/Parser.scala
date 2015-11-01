@@ -46,18 +46,18 @@ object CSTRParser extends Lexer{
     case i ~ e => Assignment(i, e)
   }
 
-  def selectInstruction: Parser[SelectInstruction] = `if` ~> condition ~ instruction ~ (`else` ~> instruction).? ^^ {
+  def selectInstruction: Parser[SelectInstruction] = `if` ~> (lp ~> condition <~ rp) ~ instruction ~ (`else` ~> instruction).? ^^ {
     case cnd ~ thn ~ els => SelectInstruction(cnd, thn, els)
   }
-  def condition: Parser[Condition] = lp ~> shiftive ~ comp ~ shiftive <~ rp ^^ {
+  def condition: Parser[Condition] =  shiftive ~ comp ~ shiftive ^^ {
     case e1 ~ op ~ e2 => Condition(e1, op, e2)
   }
 
   def iterationInstruction: Parser[IterationInstruction] = whileInstruction | doInstruction | forInstruction
-  def whileInstruction:Parser[While] = (`while` ~ lp) ~> condition ~ (rp ~> instruction)  ^^ {
+  def whileInstruction:Parser[While] = `while` ~> (lp ~> condition <~ rp) ~ instruction  ^^ {
     case c ~ i => While(c, i)
   }
-  def doInstruction: Parser[Do] = `do` ~> instruction ~ ((`while` ~ lp) ~> condition <~ rp) ^^ {
+  def doInstruction: Parser[Do] = `do` ~> instruction ~ (`while` ~> (lp ~> condition <~ rp) <~ semicolon) ^^ {
     case i ~ c => Do(c, i)
   }
   def forInstruction: Parser[For] = `for` ~> (lp ~> assignment <~ semicolon) ~

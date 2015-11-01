@@ -1,5 +1,3 @@
-/* optimization tests */
-
 int main() {
   int a;
   string b;

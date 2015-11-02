@@ -78,6 +78,10 @@ object TypeChecker {
     def apply(w: List[String], a: SymbolTable): State = a.set(w)
     def apply(a: SymbolTable): State = Writer(List.empty, a)
     def apply(): State = Writer(List.empty, SymbolTable())
+    def fold[A](seq: Seq[A], init: State, f: A => SymbolTable => State) =
+      seq.foldLeft(init){case (st, a) => st flatMap f(a)}
+    def foldExp(first: Expression, rest: Seq[(_, Expression)])(s: SymbolTable) =
+      fold(first +: (rest map (_._2)), State(s), ((e:Expression) => checkType(e, s.typeof(e), Integer)))
   }
 
   def checkType[A](a: AST, received: Option[A], expected: A)(s: SymbolTable): State =
@@ -106,70 +110,78 @@ object TypeChecker {
   }
 
   def addParams(params: Seq[ParameterDeclaration])(s: SymbolTable): State = {
-    val new_s = params.foldLeft(s) { case (s, ParameterDeclaration(t, name)) => s.addSymbol(name, t) }
+    val new_s = params.foldLeft(s) { case (s, ParameterDeclaration(t, name)) =>
+      s.addSymbol(name, t) }
     State(new_s)
   }
-
 
     def typeCheck(a: Option[AST])(s: SymbolTable): State = if (! a.isDefined) State(s) else typeCheck(a.get)(s)
 
     def typeCheck(a: AST)(s: SymbolTable): State = a match {
 
       case Program(children: Seq[TopLevel]) =>
-        children.foldLeft(State(s))(_ flatMap typeCheck(_))
+        State.fold[AST](children, State(s), typeCheck)
 
-      case ExternDeclaration(t, declList: Seq[Declarator]) =>
-        declList.foldLeft(State(s))(_ flatMap addDeclarator(t, _))
+      case ExternDeclaration(t, decList: Seq[Declarator]) =>
+        State.fold[Declarator](decList, State(s), (addDeclarator(t, _)))
 
       case Declaration(t, decList) =>
-        decList.foldLeft(State(s))(_ flatMap addDeclarator(t, _))
+        State.fold[Declarator](decList, State(s), (addDeclarator(t, _)))
 
-      case FunctionDefinition(retType, functionDeclarator, body) =>
+      case FunctionDefinition(retType, functionDeclarator, body) => {
         val FunctionDeclarator(name, params) = functionDeclarator
-        (
-          if (s contains name) // typecheck added function declaration
-            checkType(name, s.typeof(name), Func(params, retType))(s)
-          else // Just add new Declaration
-            addDeclarator(retType, functionDeclarator)(s)
-        ) map
-          (_.addLevel) map //Attach new scope
-          (_.addFName(functionDeclarator.name)) flatMap // Add function name to check return type
-          addParams(functionDeclarator.params) flatMap // Add function parameters to scope
-          typeCheck(body) map // Type check body
-          (_.removeLevel)
+        val st1 =
+          if (s contains name) checkType(name, s.typeof(name), Func(params, retType))(s)  // check decl
+          else addDeclarator(retType, functionDeclarator)(s) // Just add new Declaration
+        for {
+          s1 <- st1
+          s2 <- addParams(params)(s1.addLevel.addFName(name))
+          s3 <- typeCheck(body)(s2)
+        } yield s3.removeLevel
+      }
 
       case CompoundInstruction(decList, instrList) =>
-        (decList ++ instrList).foldLeft(State(s))(_ flatMap typeCheck(_))
+        State.fold[AST](decList ++ instrList, State(s), typeCheck)
 
       case Assignment(i, e) => checkType(a, s.typeof(i), s.typeof(e))(s)
 
-      case Condition(left, _, right) =>
-        checkType(left, s.typeof(left), Integer)(s) flatMap checkType(right, s.typeof(right), Integer)
+      case Condition(left, _, right) => for {
+        s1 <- checkType(left, s.typeof(left), Integer)(s)
+        s2 <- checkType(right, s.typeof(right), Integer)(s1)
+      } yield s2
 
-      case SelectInstruction(cond, then, _else) =>
-        typeCheck(cond)(s) map (_.addLevel) flatMap typeCheck(then) map (_.removeLevel) map
-          (_.addLevel) flatMap typeCheck(_else) map (_.removeLevel)
+      case SelectInstruction(cond, then, _else) => for {
+        s1 <- typeCheck(cond)(s)
+        s2 <- typeCheck(then)(s1.addLevel)
+        s3 <- typeCheck(_else)(s2.removeLevel.addLevel)
+      } yield s3.removeLevel
 
-      case While(cond, instr ) =>
-        typeCheck(cond)(s) map (_.addLevel) flatMap typeCheck(instr) map (_.removeLevel)
+      case While(cond, instr ) => for {
+        s1 <- typeCheck(cond)(s)
+        s2 <- typeCheck(instr)(s1.addLevel)
+      } yield s2.removeLevel
 
-      case Do(cond, instr) =>
-        typeCheck(cond)(s) map (_.addLevel) flatMap typeCheck(instr) map (_.removeLevel)
+      case Do(cond, instr) => for {
+        s1 <- typeCheck(cond)(s)
+        s2 <- typeCheck(instr)(s1.addLevel)
+      } yield s2.removeLevel
 
-      case For(init, cond, fin, instr) =>
-        typeCheck(init)(s) flatMap typeCheck(cond) flatMap typeCheck(fin) map
-          (_.addLevel) flatMap typeCheck(instr) map (_.removeLevel)
+      case For(init, cond, fin, instr) => for {
+        s1 <- typeCheck(init)(s)
+        s2 <- typeCheck(cond)(s1)
+        s3 <- typeCheck(fin)(s2)
+        s4 <- typeCheck(instr)(s3.addLevel)
+      } yield s4.removeLevel
 
-      case Return(exp) =>
-        checkType(a, s.fname flatMap s.typeof map (_.asInstanceOf[Func].ret), s.typeof(exp))(s) flatMap typeCheck(exp)
+      case Return(exp) => for {
+        s1 <- checkType(a, s.fname flatMap s.typeof map (_.asInstanceOf[Func].ret), s.typeof(exp))(s)
+        s2 <- typeCheck(exp)(s1)
+      } yield s2
 
       //For Expressions, we check the constituent parts to be Integer
-      case Shiftive(first, rest) => rest.foldLeft(checkType(first, s.typeof(first), Integer)(s))({
-        case (st, (_, exp)) => st flatMap checkType(exp, s.typeof(exp), Integer) })
-      case Additive(first, rest) => rest.foldLeft(checkType(first, s.typeof(first), Integer)(s))({
-        case (st, (_, exp)) => st flatMap checkType(exp, s.typeof(exp), Integer) })
-      case Multiplicative(first, rest) => rest.foldLeft(checkType(first, s.typeof(first), Integer)(s))({
-        case (st, (_, exp)) => st flatMap checkType(exp, s.typeof(exp), Integer) })
+      case Shiftive(first, rest) => State.foldExp(first, rest)(s)
+      case Additive(first, rest) => State.foldExp(first, rest)(s)
+      case Multiplicative(first, rest) => State.foldExp(first, rest)(s)
       case Minus(exp) => checkType(exp, s.typeof(exp), Integer)(s)
 
       case FunctionApplication(name, args) => {

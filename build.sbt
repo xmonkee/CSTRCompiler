@@ -8,5 +8,14 @@ libraryDependencies += "org.scala-lang.modules" % "scala-parser-combinators_2.11
 
 libraryDependencies += "com.github.nikita-volkov" % "sext" % "0.2.4"
 
+val scalazVersion = "7.1.0"
+
+libraryDependencies ++= Seq(
+  "org.scalaz" %% "scalaz-core" % scalazVersion,
+  "org.scalaz" %% "scalaz-effect" % scalazVersion,
+  "org.scalaz" %% "scalaz-typelevel" % scalazVersion,
+  "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
+)
+
 scalacOptions ++= Seq("-feature", "-language:higherKinds", "-language:implicitConversions")
 

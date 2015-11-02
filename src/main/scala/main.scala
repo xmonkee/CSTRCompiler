@@ -1,9 +1,10 @@
 
 import CSTRParser.{AST, TypeChecker}
-
 import scala.util.{Try, Success, Failure}
-
 import sext._
+import scalaz._
+import Scalaz._
+
 
 /**
  * Created by mayankmandava on 10/15/15.
@@ -30,7 +31,7 @@ object main {
       case Success(v) => {
         println(v.treeString)
         println;
-        println(TypeChecker.State().typeCheck(v).errors.reverse map ("Type Error: " + _) mkString "\n")
+        println((TypeChecker.State() flatMap TypeChecker.typeCheck(v) run)._1 map ("Type Error: " + _) mkString "\n")
         println;
       }
       case Failure(e) => println("Error: " + e.getMessage)

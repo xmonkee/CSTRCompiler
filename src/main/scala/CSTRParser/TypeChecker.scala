@@ -31,9 +31,9 @@ object TypeChecker {
     def addSymbol(i: Ident, t: Type) = copy(table = table + (i -> t)) // Add to current Level
     def addLevel = SymbolTable(self, fname)
     def removeLevel = parent.get
-    def addFName(name: Ident): SymbolTable = copy(fname = Some(name))
+    def addFName(name: Ident): SymbolTable = copy(fname = Some(name)) // Current function name
     def getCurrentLevel(i: Ident): Option[Type] = table.get(i) // get only from current Level
-    def get(i: Ident): Option[Type] =
+    def get(i: Ident): Option[Type] = // get recursively from current or parent
       table.get(i) match { case None => parent flatMap(_.get(i)) case x => x}
     def containsCurrentLevel(i: Ident) = getCurrentLevel(i) match {case None => false case _ => true}
     def contains(i: Ident) = get(i) match {case None => false case _ => true}
@@ -67,7 +67,7 @@ object TypeChecker {
 
   object Errors {
     def alreadyExists(i: Ident) = List(s"Symbol ${i.s} already exists")
-    def wrongType[A](a: AST, t1: A, t2: A) = List(s"$a: Type Mismatch: expected $t1, got $t2")
+    def wrongType[A](a: AST, t1: A, t2: A) = List(s"$a: Type Mismatch: expected $t2, got $t1")
     def notFound(i: Ident) = List(s"Symbold ${i.s} not found")
     def couldNotInfer(e: AST) = List(s"Cannot find type of $e")
     def wrongNumArgs(a: AST) = List(s"$a: Wrong Number of arguments passed")
@@ -115,10 +115,10 @@ object TypeChecker {
     State(new_s)
   }
 
-    def typeCheck(a: Option[AST])(s: SymbolTable): State = if (! a.isDefined) State(s) else typeCheck(a.get)(s)
+    def typeCheck(a: Option[AST])(s: SymbolTable): State =
+      a match { case Some(a_) => typeCheck(a_)(s) case None => State(s)}
 
     def typeCheck(a: AST)(s: SymbolTable): State = a match {
-
       case Program(children: Seq[TopLevel]) =>
         State.fold[AST](children, State(s), typeCheck)
 
@@ -188,8 +188,8 @@ object TypeChecker {
         val first = checkType(name, s get name, s get name)(s) // Check presence of function name
         val params = s get name map (_.asInstanceOf[Func].args)
         params match {
-          case Some(ps) if (args.length == ps.length) =>
-            (ps zip args).foldLeft(first) {
+          case Some(ps) if (args.length == ps.length) => // Check number of params
+            (ps zip args).foldLeft(first) { // Check types of params
                 case (acc: State, (expected, received)) =>
                   acc flatMap checkType(received, s.typeof(received), expected)
               }

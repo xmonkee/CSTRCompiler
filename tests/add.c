@@ -13,5 +13,5 @@ int main(int argc, int argv) {
   printd((i+0)+(j+0));
   printd((i+0)+123);
   printd(45000+(j+0));
-  return "hi";
+  return 0;
 }

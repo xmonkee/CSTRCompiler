@@ -44,6 +44,13 @@ object TypeChecker {
       get(i) match {case None => false case _ => true}
 
     def typeof(exp: Expression): Option[Type] = {
+      def typeofexpAdditive(first: Expression, rest: Seq[(_, Expression)]): Option[Type] =
+        rest.foldLeft(typeof(first))
+        {case (t1, (_, e2)) => (t1, typeof(e2)) match {
+          case (Some(Integer), Some(Integer)) => Some(Integer)
+          case (Some(String), Some(String)) => Some(String)
+          case _ => None
+        }}
       def typeofexp(first: Expression, rest: Seq[(_, Expression)]): Option[Type] =
         rest.foldLeft(typeof(first))
         {case (t1, (_, e2)) => (t1, typeof(e2)) match {
@@ -53,7 +60,7 @@ object TypeChecker {
       exp match{
         case Ident(_) => get(exp.asInstanceOf[Ident])
         case Shiftive(first, rest) => typeofexp(first, rest)
-        case Additive(first, rest) => typeofexp(first, rest)
+        case Additive(first, rest) => typeofexpAdditive(first, rest)
         case Multiplicative(first, rest) => typeofexp(first, rest)
         case Minus(e) => typeof(e) match {case Some(Integer) => Some(Integer) case _ => None}
         case FunctionApplication(name, _) => get(name) flatMap

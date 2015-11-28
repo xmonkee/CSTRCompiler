@@ -1,7 +1,6 @@
 
-import CSTRParser.{AST, TypeChecker}
+import CSTRParser.{AST, TypeChecker, IRGen}
 import scala.util.{Try, Success, Failure}
-import sext._
 import scalaz._
 import Scalaz._
 
@@ -10,7 +9,6 @@ import Scalaz._
  * Created by mayankmandava on 10/15/15.
  */
 object main {
-
 
   implicit def parseResultToTry[A](p: CSTRParser.CSTRParser.ParseResult[A]):Try[A] = p match {
     case CSTRParser.CSTRParser.Success(v, _) => Success(v)
@@ -29,10 +27,19 @@ object main {
 
     output match {
       case Success(v) => {
-        println(v.treeString)
-        println;
-        println((TypeChecker.State() flatMap TypeChecker.typeCheck(v) run)._1 map ("Type Error: " + _) mkString "\n")
-        println;
+        val typeErrors = (TypeChecker.State() flatMap TypeChecker.typeCheck(v) run)._1
+        if (typeErrors.length == 0) {
+          val pathname = args(0)
+          import java.nio.file._
+          val path = Paths.get(pathname)
+          val filename = path.getFileName.toString
+          val progName = filename.replaceAll("\\.[^.]*$", "")
+          import java.io._
+          val pw = new PrintWriter(new File(progName + ".j"))
+          pw.write(new IRGen(progName).genProgram(v))
+          pw.close
+        }
+        else println(typeErrors map ("Type Error: " + _) mkString "\n")
       }
       case Failure(e) => println("Error: " + e.getMessage)
     }

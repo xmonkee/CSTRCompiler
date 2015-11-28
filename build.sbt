@@ -17,5 +17,5 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
 )
 
-scalacOptions ++= Seq("-feature", "-language:higherKinds", "-language:implicitConversions")
+scalacOptions ++= Seq("-feature", "-language:postfixOps", "-language:higherKinds", "-language:implicitConversions")
 

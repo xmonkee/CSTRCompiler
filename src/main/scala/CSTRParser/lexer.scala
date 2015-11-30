@@ -10,6 +10,8 @@ import util.parsing.combinator.JavaTokenParsers
 
 class Lexer extends JavaTokenParsers{
 
+  protected override val whiteSpace = """(\s|//.*|(?m)/\*(\*(?!/)|[^*])*\*/)+""".r
+
   val `if`         = "if"                ^^^ IfKeyword
   val `else`       = "else"              ^^^ ElseKeyword
   val `while`      = "while"             ^^^ WhileKeyword
@@ -22,7 +24,9 @@ class Lexer extends JavaTokenParsers{
   val extern       = "extern"            ^^^ ExternalDeclaration
 
   val constInt    = super.wholeNumber    ^^  IntegerConstant
-  val constString = super.stringLiteral  ^^  StringConstant
+  val constSrt    = super.stringLiteral  ^^ StringConstant
+  val constChar   = "'"~> ".".r <~"'"    ^^ (x => StringConstant(s""""$x""""))
+  val constString = constSrt | constChar
 
   val plus         = "+"                 ^^^ PlusOp
   val minus        = "-"                 ^^^ MinusOp

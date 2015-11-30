@@ -1,5 +1,6 @@
-#include "../lib/lib.h"
-int sleep( int t );
+extern int sleep( int t );
+extern int printd( int i );
+extern int printf( string s);
 
 int main() {
   int i;
@@ -7,7 +8,6 @@ int main() {
     printd(i);
     printf("\n");
     sleep(1);
-    printf( 27+"M" );
   }
   return 0;
 }

@@ -1,6 +1,40 @@
-# Execution
+# Introduction
 
-Install sbt (Scala build tool). This is required because it can manage libraries
+This compiler compiles the language to the JVM. 
 
-$ sbt "run filename.c"
+# Testing
+Easy way: 
+
+./run.sh /tests/add.c
+This will compile, assemble, link and run the program
+The class files will be moved to testout folder
+
+All the tests are pre-compiled and already included in the testout folder.
+Feel free to clear it out.
+
+Hard(er) way:
+
+1) Compile a .c file to the jvm language using sbt
+$ sbt "run tests/add.c"
+This will generate the file add.j in the current directory
+
+2) Use the jasmine assembler to generate class file
+$ java -jar jasmin.jar add.j
+
+3) Compile the standard library (written in java, containing printd etc)
+$ javac Lib.java
+
+4) Execute program
+$ java add
+
+# Notes
+
+- The typechecking and compilation happen in two seperate sweeps. 
+- Compilation will not proceed if there are type errors
+- Typechecker is very rigorous
+- string + string is allowed, but int + string is not. Any other operations on strings also prohibited.
+- There is no preprocessor
+- Many of the tests have been modified to remove #define's and #include's
+- Strings are not mutable. erato.c changed to use tab = put_char_at(tab, j, '0')
+- You can add new functions to the standard library by modifying Lib.java, but functions should be declared in the c file before usage.
 

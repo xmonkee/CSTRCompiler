@@ -1,4 +1,4 @@
-int printd( string i );
+int printd( int i );
 
 int fact( int n ) {
   if ( n <= 1 )

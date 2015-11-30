@@ -1,43 +1,7 @@
-#ifdef GCC /* GCC Code*/
+string get_char_at(string s, int i);
+int strlen(string s);
+int printf(string s);
 
-#define STRING_SIZE 128
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-char * cat( char *s, char *t ) {
-  char *p;
-  p = (char *) malloc(STRING_SIZE);
-  strncpy( p, s , STRING_SIZE );
-  strncat( p, t , STRING_SIZE );
-  return p;
-}
-
-char * invert( char *s ) {
-  static char buf[STRING_SIZE];
-  char *b;
-  int i;
-  b = strdup(s);
-  for ( i = 0; i < strlen(s); i++ )
-    b[i] = s[strlen(s)-1-i];
-  strncpy( buf, b, STRING_SIZE-1 );
-  free(b);
-  buf[STRING_SIZE-1] = '\0';
-  return buf;
-}
-
-int main() {
-  char *s = "hello";
-  char *t = "world";
-  printf(cat(cat(s,t),invert(cat(t,s))));
-  printf(invert(invert(invert(invert(invert(invert(invert(invert(t)))))))));
-  return 0;
-}
-
-#else /* code compiler */
-
-#include "../lib/lib.h"
 
 string sub( string s, int i, int j ) {
   int k;
@@ -64,4 +28,3 @@ int main() {
   return 0;
 }
 
-#endif

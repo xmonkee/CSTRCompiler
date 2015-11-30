@@ -94,11 +94,12 @@ object TypeChecker {
       seq.foldLeft(init) {case (st, a) =>
         st flatMap f(a)
       }
-    def foldExp(first: Expression, rest: Seq[(_, Expression)])(s: SymbolTable) =
+    def foldExp(first: Expression, rest: Seq[(_, Expression)], expectedType: Option[Type] = Some(Integer))
+               (s: SymbolTable) =
       fold(
         first +: (rest map (_._2)),
         State(s),
-        ((e:Expression) => checkType(e, s.typeof(e), Integer))
+        (e: Expression) => checkType(e, s.typeof(e), expectedType)
       )
   }
 
@@ -167,9 +168,8 @@ object TypeChecker {
     case Assignment(i, e) => checkType(a, s.typeof(i), s.typeof(e))(s)
 
     case Condition(left, _, right) => for {
-      s1 <- checkType(left, s.typeof(left), Integer)(s)
-      s2 <- checkType(right, s.typeof(right), Integer)(s1)
-    } yield s2
+      s1 <- checkType(left, s.typeof(left), s.typeof(right))(s)
+    } yield s1
 
     case SelectInstruction(cond, then, _else) => for {
       s1 <- typeCheck(cond)(s)
@@ -207,7 +207,7 @@ object TypeChecker {
 
     //For Expressions, we check the constituent parts to be Integer
     case Shiftive(first, rest) => State.foldExp(first, rest)(s)
-    case Additive(first, rest) => State.foldExp(first, rest)(s)
+    case Additive(first, rest) => State.foldExp(first, rest, s.typeof(first))(s)
     case Multiplicative(first, rest) => State.foldExp(first, rest)(s)
     case Minus(exp) => checkType(exp, s.typeof(exp), Integer)(s)
 

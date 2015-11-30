@@ -1,6 +1,10 @@
+/* optimization tests */
+
 int main() {
   int a;
   string b;
+
+  b = "";
 
   if ( 0 == 0*100 )
     a = 11+1*4;

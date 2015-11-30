@@ -20,12 +20,13 @@ class IRGen(progName: String) {
   trait Kind
   case object Local extends Kind
   case object Static extends Kind
+  case object Extern extends Kind
   case class Entry(offset: Offset, kind: Kind, type_ : Type)
 
   class State {
     type Table = Map[String, Entry]
     var st: Stack[Table] = new Stack
-    var funcs: Map[String, (Type, Seq[Type])] = Map.empty
+    var funcs: Map[String, (Kind, Type, Seq[Type])] = Map.empty
     var output: String = "" // Final Output
     var totalOffset = 0
     var ftype: Type = IntegerDeclaration
@@ -35,8 +36,8 @@ class IRGen(progName: String) {
       addLine(s".field static $name ${jtype(type_)}")
       st.last.update(name, Entry(0, Static, type_))
     }
-    def addFunc(type_ : Type, name: String, params: Seq[ParameterDeclaration]) = {
-      funcs.update(name, (type_, params map (_.`type`)))
+    def addFunc(kind: Kind, type_ : Type, name: String, params: Seq[ParameterDeclaration]) = {
+      funcs.update(name, (kind, type_, params map (_.`type`)))
     }
     def addVar(type_ : Type, name: String) = {
       st.head.update(name, Entry(totalOffset, Local, type_))
@@ -103,14 +104,28 @@ class IRGen(progName: String) {
         state.addLine(s"${icmp(op)} $yes")
         state.addLine(s"goto $no")
       }
-      case StringDeclaration => Unit
+      case StringDeclaration => {
+        genExp(left)
+        genExp(right)
+        state.addLine("invokevirtual java/lang/Object/equals(Ljava/lang/Object;)Z")
+        op match {
+          case EqualOp => state.addLine(s"ifne $yes")
+          case NEOp => state.addLine(s"ifeq $yes")
+        }
+        state.addLine(s"goto $no")
+      }
     }
+  }
+
+  def notFound(s: String): Unit = {
+    println (s"Identifier $s not found")
+    System.exit(0)
   }
 
   def typeof(exp: Expression): Type = exp match {
     case StringConstant(_) => StringDeclaration
     case IntegerConstant(_) => IntegerDeclaration
-    case FunctionApplication(Ident(name), args) => state.funcs.get(name).get._1
+    case FunctionApplication(Ident(name), args) => state.funcs.get(name).get._2
     case Ident(name) => state.lookup(name).type_
     case Additive(first, rest) => typeof(first)
     case _ => IntegerDeclaration
@@ -122,11 +137,21 @@ class IRGen(progName: String) {
     state.addLevel
     state.output +=
       s"""
-        |.class public $progName
-        |.super java/lang/Object
-        |""".stripMargin
-    program.children map genIR
-    state.output +=
+         |.class public $progName
+         |.super java/lang/Object
+         |""".stripMargin
+
+    val (defns, decls) = program.children partition { case _ : FunctionDefinition => true case _ => false}
+
+    decls foreach genDecl  // declare each function as Extern by default
+    defns foreach { // change locally defined functions to kind Static
+      case FunctionDefinition(rtype, FunctionDeclarator(Ident(name), params), _) =>
+        state.addFunc(Static, rtype, name, params)
+    }
+
+    defns map genIR // Generate code for all functions
+
+    state.output += // Entry point
       s"""
          |    .method public static main([Ljava/lang/String;)V
          |    .limit locals 1
@@ -135,27 +160,22 @@ class IRGen(progName: String) {
          |      pop
          |      return
          |    .end method
-         |
-         |    .method public static printd(I)I
-         |    .limit locals 1
-         |    .limit stack 2
-         |      getstatic      java/lang/System/out Ljava/io/PrintStream;
-         |      iload_0
-         |      invokevirtual  java/io/PrintStream/println(I)V
-         |      iconst_0
-         |      ireturn
-         |    .end method
        """.stripMargin
     state.removeLevel
     state.output
   }
 
-  def genIR(ast: AST): Unit = ast match {
+  def genDecl(ast: TopLevel) = ast match {
     case Declaration(type_, declaratorList) =>
       for (declerator <- declaratorList) declerator match {
         case Ident(s) => state.addStatic(type_, s)
-        case FunctionDeclarator(Ident(name), params) => state.addFunc(type_, name, params)
+        case FunctionDeclarator(Ident(name), params) => {
+          state.addFunc(Extern, type_, name, params)
+        }
       }
+  }
+
+  def genIR(ast: AST): Unit = ast match {
     case FunctionDefinition(rtype, FunctionDeclarator(Ident(name), params), body) => {
       state.addLevel
       state.ftype = rtype
@@ -165,7 +185,7 @@ class IRGen(progName: String) {
       }
       val name_ = if(name == "main") "_main" else name
       state.addLine
-      state.addLine(s".method public static $name_(${types mkString ","})${jtype(rtype)}")
+      state.addLine(s".method public static $name_(${types mkString})${jtype(rtype)}")
       state.addLine(".limit stack 100")
       val marker = state.output.length
       genIR(body)
@@ -200,9 +220,9 @@ class IRGen(progName: String) {
 
     case SelectInstruction(cond, then, _else) => {
       val label = state.newLabel
-      val tlabel = "T"+label
-      val flabel = "F"+label
-      val nlabel = "N"+label
+      val tlabel = "THEN"+label
+      val flabel = "ELSE"+label
+      val nlabel = "CONT"+label
       condition(cond, tlabel, flabel)
       state.addLine(s"$tlabel:")
       genIR(then)
@@ -212,6 +232,44 @@ class IRGen(progName: String) {
       state.addLine(s"$nlabel:")
     }
 
+    case While(cond, instr) => {
+      val label = state.newLabel
+      val loopLabel = "LOOP" + label
+      val tlabel = "THEN" + label
+      val nlabel = "ELSE" + label
+      state.addLine(s"$loopLabel:")
+      condition(cond, tlabel, nlabel)
+      state.addLine(s"$tlabel:")
+      genIR(instr)
+      state.addLine(s"goto $loopLabel")
+      state.addLine(s"$nlabel:")
+    }
+
+    case Do(cond, instr) => {
+      val label = state.newLabel
+      val loopLabel = "LOOP" + label
+      val nlabel = "ELSE" + label
+      state.addLine(s"$loopLabel:")
+      genIR(instr)
+      condition(cond, loopLabel, nlabel)
+      state.addLine(s"$nlabel:")
+    }
+
+    case For(init, cond, fin, instr) => {
+      val label = state.newLabel
+      val loopLabel = "LOOP" + label
+      val tlabel = "THEN" + label
+      val nlabel = "ELSE" + label
+
+      genIR(init)
+      state.addLine(s"$loopLabel:")
+      condition(cond, tlabel, nlabel)
+      state.addLine(s"$tlabel:")
+      genIR(instr)
+      genIR(fin)
+      state.addLine(s"goto $loopLabel")
+      state.addLine(s"$nlabel:")
+  }
 
     case x : Expression => {
       genExp(x)
@@ -219,6 +277,7 @@ class IRGen(progName: String) {
     }
     case _ => ()
   }
+
   def genExp(exp: Expression): Unit = exp match {
     case StringConstant(s) => state.addLine(s"ldc $s")
     case IntegerConstant(s) => state.addLine(s"ldc $s")
@@ -229,7 +288,7 @@ class IRGen(progName: String) {
         case Static => state.addLine(s"getstatic $progName/$name ${jtype(type_)}")
       }
     }
-    case Minus(unary) => state.addLine("ineg")
+    case Minus(unary) => genExp(unary); state.addLine("ineg")
     case Shiftive(first, rest) => {
       genExp(first)
       for ((op, e) <- rest) op match {
@@ -247,7 +306,7 @@ class IRGen(progName: String) {
           }
         case StringDeclaration =>
           for ((op, e) <- rest) {
-            genExp(e);
+            genExp(e)
             state.addLine("invokevirtual java/lang/String/concat(Ljava/lang/String;)Ljava/lang/String;")}
           }
       }
@@ -261,9 +320,18 @@ class IRGen(progName: String) {
     }
     case FunctionApplication(Ident(name), args) => {
       args foreach genExp
-      val argtypes = state.funcs.get(name).get._2 map jtype mkString ","
-      val retType = state.funcs.get(name).get._1
-      state.addLine(s"invokestatic $progName/$name($argtypes)${jtype(retType)}")
+      val (kind: Kind, retType: Type, argTypes: Seq[Type]) = {
+        val optional = state.funcs.get(name)
+        if (optional.isEmpty) notFound(name)
+        optional.get
+      }
+      val rType = jtype(retType)
+      val aTypes = argTypes map jtype mkString
+
+      kind match {
+        case Static => state.addLine(s"invokestatic $progName/$name($aTypes)$rType")
+        case Extern => state.addLine(s"invokestatic Lib/$name($aTypes)$rType")
+      }
     }
     case _ => Unit
   }

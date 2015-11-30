@@ -28,6 +28,7 @@ object main {
     output match {
       case Success(v) => {
         val typeErrors = (TypeChecker.State() flatMap TypeChecker.typeCheck(v) run)._1
+        typeErrors foreach (e => println (s"Type Error: $e\n"))
         if (typeErrors.length == 0) {
           val pathname = args(0)
           import java.nio.file._
@@ -39,7 +40,6 @@ object main {
           pw.write(new IRGen(progName).genProgram(v))
           pw.close
         }
-        else println(typeErrors map ("Type Error: " + _) mkString "\n")
       }
       case Failure(e) => println("Error: " + e.getMessage)
     }

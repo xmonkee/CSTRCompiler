@@ -25,8 +25,8 @@ object CSTRParser extends Lexer{
     case i ~ None => FunctionDeclarator(i, List[ParameterDeclaration]())
     case i ~ Some(x) => FunctionDeclarator(i, x)
   }
-  def externDeclaration: Parser[ExternDeclaration] = extern ~> declaration ^^ {
-    case Declaration(t, l) => ExternDeclaration(t, l)
+  def externDeclaration: Parser[Declaration] = extern ~> declaration ^^ {
+    case Declaration(t, l) => Declaration(t, l)
   }
   def functionDefinition: Parser[FunctionDefinition] = `type` ~ functionDeclarator ~ compoundInstruction ^^ {
     case t ~ f ~ c => FunctionDefinition(t, f, c)

@@ -1,22 +1,5 @@
-
-typedef char* string;
-
-string cat( string s, string t ) {
-  char *p;
-  p = (char *) malloc(STRING_SIZE);
-  strncpy( p, s , STRING_SIZE-1 );
-  strncat( p, t , STRING_SIZE-1-strlen(p));
-  return p;
-}
-
-string int2string( int a ) {
-  char s[2] = " ";
-  *s = a;
-  return strdup(s);
-}
-
+string cat (string a, string b);
 extern int printf( string s );
-
 
 string u;
 
@@ -37,4 +20,8 @@ int main() {
   printf(cat((cat(s,s)),(cat(t,t))));
   printf(cat(cat(s,u),t));
   return 0;
+}
+
+string cat(string a, string b) {
+    return a + b;
 }

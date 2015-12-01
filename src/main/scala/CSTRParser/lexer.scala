@@ -19,9 +19,10 @@ class Lexer extends JavaTokenParsers{
   val `for`        = "for"               ^^^ ForKeyword
   val `return`     = "return"            ^^^ ReturnKeyword
 
-  val int          = "int"               ^^^ IntegerDeclaration
-  val string       = "string"            ^^^ StringDeclaration
+  val int          = "int"               ^^^ IntType
+  val string       = "string"            ^^^ StrType
   val extern       = "extern"            ^^^ ExternalDeclaration
+  val arr          = "vec"               ^^^ ArrType
 
   val constInt    = super.wholeNumber    ^^  IntegerConstant
   val constSrt    = super.stringLiteral  ^^ StringConstant
@@ -59,7 +60,7 @@ class Lexer extends JavaTokenParsers{
 
  val identifier : Parser[Ident] = super.ident ^^ Ident
  val keyword : Parser[Keyword] = `if` | `else` | `while` | `do` | `for` | `return`
- val `type` : Parser[Type] = int | string | extern
+ val `type` : Parser[Type] = int | string | arr | extern
  val const : Parser[Lexeme] = constInt | constString
  val plusminus : Parser[AdditiveOperator] = plus | minus
  val multdiv : Parser[MultiplicativeOperator] = mult | div | mod

@@ -29,7 +29,7 @@ class IRGen(progName: String) {
     var funcs: Map[String, (Kind, Type, Seq[Type])] = Map.empty
     var output: String = "" // Final Output
     var totalOffset = 0
-    var ftype: Type = IntegerDeclaration
+    var ftype: Type = IntType
     def addLevel = st.push(Map.empty)
     def removeLevel = st.pop
     def addStatic(type_ : Type, name: String) {
@@ -68,16 +68,18 @@ class IRGen(progName: String) {
   //Helper functions
 
   def jtype (type_ : Type) : String = type_ match {
-    case IntegerDeclaration => "I"
-    case StringDeclaration => "Ljava/lang/String;"
+    case IntType => "I"
+    case StrType => "Ljava/lang/String;"
+    case ArrType => "[I"
     case _ => ""
   }
 
 
   def load_store(type_ : Type, ls: String, offset: Offset): String = {
     val prefix = type_ match {
-      case IntegerDeclaration => "i"
-      case StringDeclaration => "a"
+      case IntType => "i"
+      case StrType => "a"
+      case ArrType => "a"
     }
     val index = offset match {
       case _ if offset <= 3 => s"_$offset"
@@ -98,13 +100,13 @@ class IRGen(progName: String) {
   def condition(cond: Condition, yes: String, no: String) = {
     val Condition(left, op, right) = cond
     typeof(left) match {
-      case IntegerDeclaration => {
+      case IntType => {
         genExp(left)
         genExp(right)
         state.addLine(s"${icmp(op)} $yes")
         state.addLine(s"goto $no")
       }
-      case StringDeclaration => {
+      case StrType => {
         genExp(left)
         genExp(right)
         state.addLine("invokevirtual java/lang/Object/equals(Ljava/lang/Object;)Z")
@@ -123,12 +125,12 @@ class IRGen(progName: String) {
   }
 
   def typeof(exp: Expression): Type = exp match {
-    case StringConstant(_) => StringDeclaration
-    case IntegerConstant(_) => IntegerDeclaration
+    case StringConstant(_) => StrType
+    case IntegerConstant(_) => IntType
     case FunctionApplication(Ident(name), args) => state.funcs.get(name).get._2
     case Ident(name) => state.lookup(name).type_
     case Additive(first, rest) => typeof(first)
-    case _ => IntegerDeclaration
+    case _ => IntType
   }
 
   // Code Generation
@@ -213,8 +215,8 @@ class IRGen(progName: String) {
     case Return(exp) => {
       genExp(exp)
       state.ftype match {
-        case IntegerDeclaration => state.addLine("ireturn")
-        case StringDeclaration => state.addLine("areturn")
+        case IntType => state.addLine("ireturn")
+        case StrType => state.addLine("areturn")
       }
     }
 
@@ -299,12 +301,12 @@ class IRGen(progName: String) {
     case Additive(first, rest) => {
       genExp(first)
       typeof(first) match {
-        case IntegerDeclaration =>
+        case IntType =>
           for ((op, e) <- rest) op match {
             case PlusOp => {genExp(e); state.addLine("iadd")}
             case MinusOp => {genExp(e); state.addLine("isub")}
           }
-        case StringDeclaration =>
+        case StrType =>
           for ((op, e) <- rest) {
             genExp(e)
             state.addLine("invokevirtual java/lang/String/concat(Ljava/lang/String;)Ljava/lang/String;")}

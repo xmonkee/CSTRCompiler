@@ -15,11 +15,13 @@ object TypeChecker {
   trait BaseType extends Type
   case object Integer extends BaseType
   case object String extends BaseType
+  case object ArrType extends BaseType
   case class Func(args: Seq[BaseType], ret: BaseType) extends Type
 
   implicit def LexTypeToType(t: Lexemes.Type): BaseType = t match {
-    case Lexemes.IntegerDeclaration => Integer
-    case Lexemes.StringDeclaration => String
+    case Lexemes.IntType => Integer
+    case Lexemes.StrType => String
+    case Lexemes.ArrType => ArrType
   }
 
   implicit def ParamListToTypeList(xs: Seq[ParameterDeclaration]): Seq[BaseType] = {

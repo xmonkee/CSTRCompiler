@@ -16,9 +16,9 @@ object Lexemes {
 
   trait Type extends Lexeme
   case object ExternalDeclaration extends Type
-  case object IntegerDeclaration extends Type
-  case object StringDeclaration extends Type
-
+  case object IntType extends Type
+  case object StrType extends Type
+  case object ArrType extends Type
 
   trait AdditiveOperator extends Lexeme
   case object PlusOp extends AdditiveOperator

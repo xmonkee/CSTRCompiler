@@ -217,6 +217,7 @@ class IRGen(progName: String) {
       state.ftype match {
         case IntType => state.addLine("ireturn")
         case StrType => state.addLine("areturn")
+        case ArrType => state.addLine("areturn")
       }
     }
 

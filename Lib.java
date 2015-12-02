@@ -1,4 +1,8 @@
 public class Lib {
+    public static int print0(int i){
+        System.out.printf("%d ", i);
+        return 0;
+    }
     public static int printd(int i){
         System.out.println(i);
         return 0;

@@ -93,7 +93,8 @@ object CSTRParser extends Lexer{
   def postfixExpression: Parser[Expression] = functionApplication | primaryExpression
 
   def functionApplication: Parser[Expression] = identifier ~ (lp ~> repsep(shiftive, comma) <~ rp) ^^ {
-      case i ~ l => FunctionApplication(i, l)}
+      case i ~ l => FunctionApplication(i, l)
+  }
 
   def primaryExpression: Parser[Expression] = identifier | constInt | constString | lp ~> shiftive <~ rp
 }
